@@ -1,6 +1,6 @@
 # mcp-us-gov-contracts
 
-US state & local awarded government contracts, normalized across jurisdictions — keyless
+US state & local government contracts + spending, normalized across jurisdictions — keyless
 
 Part of [Pipeworx](https://pipeworx.io) — an MCP gateway connecting AI agents to 1326+ live data sources.
 

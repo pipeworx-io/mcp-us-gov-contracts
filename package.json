@@ -1,7 +1,7 @@
 {
   "name": "@pipeworx/mcp-us-gov-contracts",
   "version": "0.1.0",
-  "description": "US state & local awarded government contracts, normalized across jurisdictions — keyless",
+  "description": "US state & local government contracts + spending, normalized across jurisdictions — keyless",
   "type": "module",
   "main": "src/index.ts",
   "types": "src/index.ts",

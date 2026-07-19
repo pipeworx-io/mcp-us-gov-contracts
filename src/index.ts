@@ -39,7 +39,7 @@ const UA = 'pipeworx.io admin@pipeworx.io';
 // Normalized contract fields the tools emit. Each jurisdiction maps its own
 // columns onto these; unmapped fields come back null.
 interface FieldMap {
-  contract_id: string;
+  contract_id?: string;
   vendor: string;
   title?: string;
   agency?: string;
@@ -47,6 +47,8 @@ interface FieldMap {
   start_date?: string;
   end_date?: string;
   method?: string;
+  category?: string; // spend datasets: commodity/expense category
+  year?: string; // spend datasets: fiscal year
 }
 
 interface Jurisdiction {
@@ -118,9 +120,88 @@ const JURISDICTIONS: Jurisdiction[] = [
     searchCols: ['description', 'vendor_supplier_name'],
     source_url: 'https://data.kingcounty.gov/d/dqit-zt74',
   },
+  {
+    key: 'nyc',
+    name: 'New York City',
+    level: 'city',
+    platform: 'socrata',
+    base: 'https://data.cityofnewyork.us/resource/qyyg-4tf5.json',
+    resource: 'qyyg-4tf5',
+    fields: {
+      contract_id: 'pin',
+      vendor: 'vendor_name',
+      title: 'short_title',
+      agency: 'agency_name',
+      amount: 'contract_amount',
+      start_date: 'start_date',
+      end_date: 'end_date',
+      method: 'selection_method_description',
+    },
+    searchCols: ['short_title', 'vendor_name'],
+    source_url: 'https://data.cityofnewyork.us/d/qyyg-4tf5',
+  },
+  {
+    key: 'chicago',
+    name: 'Chicago',
+    level: 'city',
+    platform: 'socrata',
+    base: 'https://data.cityofchicago.org/resource/rsxa-ify5.json',
+    resource: 'rsxa-ify5',
+    fields: {
+      contract_id: 'purchase_order_contract_number',
+      vendor: 'vendor_name',
+      title: 'purchase_order_description',
+      agency: 'department',
+      amount: 'award_amount',
+      start_date: 'start_date',
+      end_date: 'end_date',
+      method: 'procurement_type',
+    },
+    searchCols: ['purchase_order_description', 'vendor_name'],
+    source_url: 'https://data.cityofchicago.org/d/rsxa-ify5',
+  },
 ];
 
 const BY_KEY = new Map(JURISDICTIONS.map((j) => [j.key, j]));
+
+// ── Spend / vendor-payment registry (SEPARATE from awarded contracts) ────────
+// State "checkbook" data: what an agency actually PAID a vendor, by category and
+// fiscal year — distinct from an awarded contract's value. Same Socrata client,
+// different shape/tool so the two aren't conflated.
+const SPEND_JURISDICTIONS: Jurisdiction[] = [
+  {
+    key: 'nj', name: 'New Jersey (statewide)', level: 'state', platform: 'socrata',
+    base: 'https://data.nj.gov/resource/ubnu-tqu7.json', resource: 'ubnu-tqu7',
+    fields: { vendor: 'vendor_name', agency: 'department_agency_desc', amount: 'ytd_amt', category: 'commodity_sector_desc', year: 'fiscal_year' },
+    searchCols: ['vendor_name'], source_url: 'https://data.nj.gov/d/ubnu-tqu7',
+  },
+  {
+    key: 'vt', name: 'Vermont (statewide)', level: 'state', platform: 'socrata',
+    base: 'https://data.vermont.gov/resource/y2u8-8ruq.json', resource: 'y2u8-8ruq',
+    fields: { vendor: 'vendor', agency: 'govtunit', amount: 'amt', category: 'description', year: 'qtrending' },
+    searchCols: ['vendor', 'description'], source_url: 'https://data.vermont.gov/d/y2u8-8ruq',
+  },
+  {
+    key: 'or', name: 'Oregon (statewide)', level: 'state', platform: 'socrata',
+    base: 'https://data.oregon.gov/resource/y9g9-xsxs.json', resource: 'y9g9-xsxs',
+    fields: { vendor: 'vendor', agency: 'agency', amount: 'expense', category: 'expend_class', year: 'fiscal_year' },
+    searchCols: ['vendor'], source_url: 'https://data.oregon.gov/d/y9g9-xsxs',
+  },
+  {
+    key: 'md', name: 'Maryland (statewide)', level: 'state', platform: 'socrata',
+    base: 'https://opendata.maryland.gov/resource/7syw-q4cy.json', resource: '7syw-q4cy',
+    fields: { vendor: 'vendor_name', agency: 'agency_name', amount: 'amount', category: 'category', year: 'fiscal_year' },
+    searchCols: ['vendor_name'], source_url: 'https://opendata.maryland.gov/d/7syw-q4cy',
+  },
+  {
+    key: 'mo', name: 'Missouri (statewide)', level: 'state', platform: 'socrata',
+    base: 'https://data.mo.gov/resource/gndj-tfr3.json', resource: 'gndj-tfr3',
+    fields: { vendor: 'vendor_name', agency: 'agency_name', amount: 'payments_total', category: 'category_description', year: 'fiscal_year' },
+    searchCols: ['vendor_name'], source_url: 'https://data.mo.gov/d/gndj-tfr3',
+  },
+];
+
+const BY_KEY_SPEND = new Map(SPEND_JURISDICTIONS.map((j) => [j.key, j]));
 
 const tools: McpToolExport['tools'] = [
   {
@@ -140,9 +221,25 @@ const tools: McpToolExport['tools'] = [
     },
   },
   {
+    name: 'gov_spending_search',
+    description:
+      "Search US STATE government spending / vendor payments — the 'checkbook' data of what an agency actually PAID a vendor (distinct from an awarded contract's value). Keyless. Filter by vendor, awarding agency, spending category keyword, and minimum amount. Pass a `jurisdiction` key (see gov_contracts_jurisdictions) to target one state, or omit it to search all covered states. Returns vendor, agency, amount, category, and fiscal year. Use gov_contracts_search for awarded contracts; use this for actual payments/expenditures.",
+    inputSchema: {
+      type: 'object' as const,
+      properties: {
+        jurisdiction: { type: 'string', description: 'State key to target (e.g. "nj", "vt", "or", "md", "mo"). Omit to search all covered states.' },
+        vendor: { type: 'string', description: 'Vendor/payee name to match (case-insensitive substring).' },
+        keyword: { type: 'string', description: 'Match against the spending category/description (case-insensitive substring).' },
+        agency: { type: 'string', description: 'Paying agency/department to match (case-insensitive substring).' },
+        min_amount: { type: ['number', 'string'], description: 'Only payments of at least this many dollars.' },
+        limit: { type: ['number', 'string'], description: 'Max records per state (default 20, max 100).' },
+      },
+    },
+  },
+  {
     name: 'gov_contracts_jurisdictions',
     description:
-      "List the US state & local jurisdictions covered by gov_contracts_search, with each jurisdiction's key, level (state/county/city), data platform, source dataset URL, and live record count. Use to discover which jurisdiction keys to pass to gov_contracts_search.",
+      "List the US state & local jurisdictions covered by this pack, split into contract-award jurisdictions (gov_contracts_search) and spending/checkbook jurisdictions (gov_spending_search), with each one's key, level (state/county/city), data platform, source dataset URL, and live record count.",
     inputSchema: { type: 'object' as const, properties: {} },
   },
 ];
@@ -265,25 +362,77 @@ async function search(args: Record<string, unknown>): Promise<unknown> {
   };
 }
 
+function normalizeSpend(j: Jurisdiction, r: Record<string, unknown>): Record<string, unknown> {
+  return {
+    jurisdiction: j.key,
+    jurisdiction_name: j.name,
+    vendor: pick(r, j.fields.vendor),
+    agency: pick(r, j.fields.agency),
+    amount: parseAmount(pick(r, j.fields.amount)),
+    category: pick(r, j.fields.category),
+    fiscal_year: pick(r, j.fields.year),
+  };
+}
+
+async function searchSpend(args: Record<string, unknown>): Promise<unknown> {
+  const limit = Math.min(Math.max(Number(args.limit) || 20, 1), 100);
+  const f: Filters = {
+    vendor: strArg(args.vendor),
+    keyword: strArg(args.keyword),
+    agency: strArg(args.agency),
+    minAmount: numArg(args.min_amount),
+  };
+  const jurKey = strArg(args.jurisdiction);
+  let targets: Jurisdiction[];
+  if (jurKey) {
+    const j = BY_KEY_SPEND.get(jurKey.toLowerCase());
+    if (!j) return { error: 'user_error', message: `Unknown spending jurisdiction "${jurKey}". Call gov_contracts_jurisdictions for valid keys.` };
+    targets = [j];
+  } else {
+    targets = SPEND_JURISDICTIONS;
+  }
+  const settled = await Promise.allSettled(targets.map((j) => querySocrata(j, f, limit).then((rows) => rows.map((r) => normalizeSpend(j, r)))));
+  const payments: Record<string, unknown>[] = [];
+  const errors: Record<string, string> = {};
+  settled.forEach((s, i) => {
+    if (s.status === 'fulfilled') payments.push(...s.value);
+    else errors[targets[i].key] = s.reason instanceof Error ? s.reason.message : String(s.reason);
+  });
+  if (!jurKey) payments.sort((a, b) => (Number(b.amount) || -Infinity) - (Number(a.amount) || -Infinity));
+  return {
+    jurisdictions_searched: targets.map((j) => j.key),
+    count: payments.length,
+    payments: jurKey ? payments : payments.slice(0, limit),
+    ...(Object.keys(errors).length ? { errors } : {}),
+  };
+}
+
+async function countFor(j: Jurisdiction): Promise<number | null> {
+  try {
+    if (j.platform === 'socrata') {
+      const d = await fetchJson(`${j.base}?$select=count(1)`);
+      return Number(d?.[0]?.count_1 ?? d?.[0]?.count ?? null) || null;
+    }
+    const d = await fetchJson(`${j.base}/datastore_search?resource_id=${j.resource}&limit=0`);
+    return Number(d?.result?.total ?? null) || null;
+  } catch {
+    return null;
+  }
+}
+
 async function jurisdictions(): Promise<unknown> {
-  const rows = await Promise.all(
-    JURISDICTIONS.map(async (j) => {
-      let record_count: number | null = null;
-      try {
-        if (j.platform === 'socrata') {
-          const d = await fetchJson(`${j.base}?$select=count(1)`);
-          record_count = Number(d?.[0]?.count_1 ?? d?.[0]?.count ?? null) || null;
-        } else {
-          const d = await fetchJson(`${j.base}/datastore_search?resource_id=${j.resource}&limit=0`);
-          record_count = Number(d?.result?.total ?? null) || null;
-        }
-      } catch {
-        record_count = null;
-      }
-      return { key: j.key, name: j.name, level: j.level, platform: j.platform, record_count, source_url: j.source_url };
-    }),
-  );
-  return { count: rows.length, jurisdictions: rows };
+  const shape = async (j: Jurisdiction) => ({
+    key: j.key, name: j.name, level: j.level, platform: j.platform,
+    record_count: await countFor(j), source_url: j.source_url,
+  });
+  const [contracts, spending] = await Promise.all([
+    Promise.all(JURISDICTIONS.map(shape)),
+    Promise.all(SPEND_JURISDICTIONS.map(shape)),
+  ]);
+  return {
+    contract_jurisdictions: contracts, // use with gov_contracts_search
+    spending_jurisdictions: spending, // use with gov_spending_search
+  };
 }
 
 async function callTool(name: string, args: Record<string, unknown>): Promise<unknown> {
@@ -291,6 +440,8 @@ async function callTool(name: string, args: Record<string, unknown>): Promise<un
     switch (name) {
       case 'gov_contracts_search':
         return await search(args);
+      case 'gov_spending_search':
+        return await searchSpend(args);
       case 'gov_contracts_jurisdictions':
         return await jurisdictions();
       default:
