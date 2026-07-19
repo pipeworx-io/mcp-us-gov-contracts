@@ -160,6 +160,45 @@ const JURISDICTIONS: Jurisdiction[] = [
     searchCols: ['purchase_order_description', 'vendor_name'],
     source_url: 'https://data.cityofchicago.org/d/rsxa-ify5',
   },
+  {
+    key: 'cook-county-il',
+    name: 'Cook County, IL',
+    level: 'county',
+    platform: 'socrata',
+    base: 'https://datacatalog.cookcountyil.gov/resource/qh8j-6k63.json',
+    resource: 'qh8j-6k63',
+    fields: {
+      contract_id: 'contract_number',
+      vendor: 'vendor_name',
+      title: 'description',
+      agency: 'lead_department',
+      amount: 'amount',
+      start_date: 'start_date',
+      end_date: 'end_date',
+      method: 'category',
+    },
+    searchCols: ['description', 'vendor_name'],
+    source_url: 'https://datacatalog.cookcountyil.gov/d/qh8j-6k63',
+  },
+  {
+    key: 'austin',
+    name: 'Austin, TX',
+    level: 'city',
+    platform: 'socrata',
+    base: 'https://data.austintexas.gov/resource/84ih-p28j.json',
+    resource: '84ih-p28j',
+    fields: {
+      contract_id: 'doc_id',
+      vendor: 'lgl_nm',
+      title: 'doc_dscr',
+      agency: 'doc_dept_cd',
+      amount: 'ma_prch_lmt_am',
+      start_date: 'efbgn_dt',
+      method: 'cat_dscr',
+    },
+    searchCols: ['doc_dscr', 'lgl_nm'],
+    source_url: 'https://data.austintexas.gov/d/84ih-p28j',
+  },
 ];
 
 const BY_KEY = new Map(JURISDICTIONS.map((j) => [j.key, j]));
@@ -198,6 +237,12 @@ const SPEND_JURISDICTIONS: Jurisdiction[] = [
     base: 'https://data.mo.gov/resource/gndj-tfr3.json', resource: 'gndj-tfr3',
     fields: { vendor: 'vendor_name', agency: 'agency_name', amount: 'payments_total', category: 'category_description', year: 'fiscal_year' },
     searchCols: ['vendor_name'], source_url: 'https://data.mo.gov/d/gndj-tfr3',
+  },
+  {
+    key: 'dallas', name: 'Dallas, TX', level: 'city', platform: 'socrata',
+    base: 'https://www.dallasopendata.com/resource/x5ih-idh7.json', resource: 'x5ih-idh7',
+    fields: { vendor: 'vendor', agency: 'department', amount: 'chksubtot', category: 'commoditydscr', year: 'fy' },
+    searchCols: ['vendor', 'commoditydscr'], source_url: 'https://www.dallasopendata.com/d/x5ih-idh7',
   },
 ];
 

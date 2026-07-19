@@ -2,7 +2,7 @@
 
 US state & local government contracts + spending, normalized across jurisdictions — keyless
 
-Part of [Pipeworx](https://pipeworx.io) — an MCP gateway connecting AI agents to 1326+ live data sources.
+Part of [Pipeworx](https://pipeworx.io) — an MCP gateway connecting AI agents to 1329+ live data sources.
 
 ## Tools
 
@@ -23,7 +23,7 @@ Add to your MCP client (Claude Desktop, Cursor, Windsurf, etc.):
 }
 ```
 
-Or connect to the full Pipeworx gateway for access to all 1326+ data sources:
+Or connect to the full Pipeworx gateway for access to all 1329+ data sources:
 
 ```json
 {
