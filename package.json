@@ -1,6 +1,6 @@
 {
   "name": "@pipeworx/mcp-us-gov-contracts",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "US state & local government contracts + spending, normalized across jurisdictions — keyless",
   "type": "module",
   "main": "src/index.ts",

@@ -199,6 +199,24 @@ const JURISDICTIONS: Jurisdiction[] = [
     searchCols: ['doc_dscr', 'lgl_nm'],
     source_url: 'https://data.austintexas.gov/d/84ih-p28j',
   },
+  {
+    key: 'va',
+    name: 'Virginia (eVA statewide)',
+    level: 'state',
+    platform: 'ckan',
+    base: 'https://data.virginia.gov/api/3/action',
+    resource: '3c7f1bde-35b0-4fbf-b89c-978a19124d53',
+    fields: {
+      contract_id: 'Order #',
+      vendor: 'Vendor Name',
+      title: 'Item Description',
+      agency: 'Entity Description',
+      amount: 'Line Total',
+      method: 'NIGP Description',
+    },
+    searchCols: ['Item Description', 'Vendor Name'],
+    source_url: 'https://data.virginia.gov/dataset/eva-procurement-data-2023',
+  },
 ];
 
 const BY_KEY = new Map(JURISDICTIONS.map((j) => [j.key, j]));
@@ -243,6 +261,12 @@ const SPEND_JURISDICTIONS: Jurisdiction[] = [
     base: 'https://www.dallasopendata.com/resource/x5ih-idh7.json', resource: 'x5ih-idh7',
     fields: { vendor: 'vendor', agency: 'department', amount: 'chksubtot', category: 'commoditydscr', year: 'fy' },
     searchCols: ['vendor', 'commoditydscr'], source_url: 'https://www.dallasopendata.com/d/x5ih-idh7',
+  },
+  {
+    key: 'ct', name: 'Connecticut (statewide)', level: 'state', platform: 'socrata',
+    base: 'https://data.ct.gov/resource/ajdm-rvz7.json', resource: 'ajdm-rvz7',
+    fields: { vendor: 'vendor', agency: 'department', amount: 'amount', category: 'expense_category', year: 'fiscal_year' },
+    searchCols: ['vendor'], source_url: 'https://data.ct.gov/d/ajdm-rvz7',
   },
 ];
 
