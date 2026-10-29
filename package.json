@@ -1,12 +1,20 @@
 {
   "name": "@pipeworx/mcp-us-gov-contracts",
-  "version": "0.4.2",
-  "description": "US Government Contracts MCP — awarded state & local government contracts,",
+  "version": "0.5.0",
+  "description": "US Government Contracts MCP — awarded state & local government contracts, normalized across jurisdictions, keyless.",
   "type": "module",
-  "main": "src/index.ts",
-  "types": "src/index.ts",
+  "main": "lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./tools.json": "./tools.json",
+    "./package.json": "./package.json"
+  },
   "bin": {
     "mcp-us-gov-contracts": "bin/cli.js"
+  },
+  "files": ["bin/", "lib/", "tools.json", "server.json"],
+  "engines": {
+    "node": ">=18"
   },
   "keywords": ["mcp", "mcp-server", "model-context-protocol", "pipeworx", "us-gov-contracts"],
   "license": "MIT",
@@ -14,19 +22,12 @@
     "type": "git",
     "url": "git+https://github.com/pipeworx-io/mcp-us-gov-contracts.git"
   },
-  "scripts": {
-    "typecheck": "tsc --noEmit"
-  },
-  "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.30.0",
-    "tsx": "^4.19.0"
-  },
-  "devDependencies": {
-    "typescript": "^5.9.3",
-    "@cloudflare/workers-types": "^4.20260405.1"
-  },
+  "mcpName": "io.github.pipeworx-io/us-gov-contracts",
   "pipeworx": {
-    "sourceHash": "v1-9bea70021f368e51e2386a0b9657cc11ef4e76513f90ea75746266509ee2561b",
-    "sourceCommit": "66a0692f029179984440cef6938cba7fdd41d66d"
+    "mode": "gateway",
+    "slug": "us-gov-contracts",
+    "gatewaySlug": "us-gov-contracts",
+    "sourceHash": "v1-af5c16e142cf2f49e81b5aebd2cb89a932a00e14606e0e959c39e25cd366f406",
+    "sourceCommit": "98853f34516646cb7c4c1460f09249b262c0269e"
   }
 }

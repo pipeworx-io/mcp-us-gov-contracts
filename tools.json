@@ -1,0 +1,88 @@
+[
+  {
+    "name": "gov_contracts_search",
+    "description": "Search AWARDED US state & local government contracts, normalized across jurisdictions (keyless open data). Filter by vendor (winning supplier), keyword (contract title/description), awarding agency, and minimum dollar amount. Covers state and county contract registries — pass a `jurisdiction` key (see gov_contracts_jurisdictions) to target one, or omit it to search all covered jurisdictions at once. Returns each contract with its ID, vendor, title, agency, amount, and dates. This is STATE/LOCAL award data (for federal contracts use USAspending/SAM tools).",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "jurisdiction": {
+          "type": "string",
+          "description": "Jurisdiction key to target (e.g. \"tx\", \"wa\", \"king-county-wa\"). Omit to search all covered jurisdictions. Use gov_contracts_jurisdictions to list keys."
+        },
+        "vendor": {
+          "type": "string",
+          "description": "Winning vendor/supplier name to match (case-insensitive substring), e.g. \"Microsoft\"."
+        },
+        "keyword": {
+          "type": "string",
+          "description": "Match against contract title/description (case-insensitive substring), e.g. \"software\", \"road\"."
+        },
+        "agency": {
+          "type": "string",
+          "description": "Awarding agency/department to match (case-insensitive substring). Not all jurisdictions carry an agency field."
+        },
+        "min_amount": {
+          "type": [
+            "number",
+            "string"
+          ],
+          "description": "Only contracts whose value is at least this many dollars."
+        },
+        "limit": {
+          "type": [
+            "number",
+            "string"
+          ],
+          "description": "Max contracts per jurisdiction (default 20, max 100)."
+        }
+      }
+    }
+  },
+  {
+    "name": "gov_spending_search",
+    "description": "Search US STATE government spending / vendor payments — the 'checkbook' data of what an agency actually PAID a vendor (distinct from an awarded contract's value). Keyless. Filter by vendor, awarding agency, spending category keyword, and minimum amount. Pass a `jurisdiction` key (see gov_contracts_jurisdictions) to target one state, or omit it to search all covered states. Returns vendor, agency, amount, category, and fiscal year. Use gov_contracts_search for awarded contracts; use this for actual payments/expenditures.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "jurisdiction": {
+          "type": "string",
+          "description": "State key to target (e.g. \"nj\", \"vt\", \"or\", \"md\", \"mo\"). Omit to search all covered states."
+        },
+        "vendor": {
+          "type": "string",
+          "description": "Vendor/payee name to match (case-insensitive substring)."
+        },
+        "keyword": {
+          "type": "string",
+          "description": "Match against the spending category/description (case-insensitive substring)."
+        },
+        "agency": {
+          "type": "string",
+          "description": "Paying agency/department to match (case-insensitive substring)."
+        },
+        "min_amount": {
+          "type": [
+            "number",
+            "string"
+          ],
+          "description": "Only payments of at least this many dollars."
+        },
+        "limit": {
+          "type": [
+            "number",
+            "string"
+          ],
+          "description": "Max records per state (default 20, max 100)."
+        }
+      }
+    }
+  },
+  {
+    "name": "gov_contracts_jurisdictions",
+    "description": "List the US state & local jurisdictions covered by this pack, split into contract-award jurisdictions (gov_contracts_search) and spending/checkbook jurisdictions (gov_spending_search), with each one's key, level (state/county/city), data platform, source dataset URL, and live record count.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {}
+    }
+  }
+]
